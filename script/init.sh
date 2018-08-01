@@ -8,7 +8,7 @@ fi
 
 echo 'Configuring Grafana...'
 add_prometheus() {
-  curl "http://${CREDENTIALS}@graf:3000/api/datasources" \
+  curl "http://${CREDENTIALS}@10.6.0.6:3000/api/datasources" \
     -X POST \
     -H 'Content-Type: application/json;charset=UTF-8' \
     --data-binary \
@@ -18,7 +18,7 @@ add_prometheus() {
 add_dashboard() {
   echo
   echo "Adding $1 dashboard"
-  curl "http://${CREDENTIALS}@graf:3000/api/dashboards/db" \
+  curl "http://${CREDENTIALS}@10.6.0.6:3000/api/dashboards/db" \
     -X POST \
     -H 'Content-Type: application/json;charset=UTF-8' \
     --data-binary \

@@ -6,6 +6,9 @@ services:
   image: infracloud/hsl-withsl:v1
   ports:
    - 8081:8081
+  networks:
+    vpcbr:
+      ipv4_address: 10.5.0.5
 
  vloadgenerator:
   container_name: vloadgenerator
@@ -15,3 +18,14 @@ services:
    - hsl-sl
   volumes:
     - /tmp:/app/report
+  networks:
+    vpcbr:
+      ipv4_address: 10.5.0.6    
+
+networks:
+  vpcbr:
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 10.5.0.0/16
+         #gateway: 10.5.0.1
