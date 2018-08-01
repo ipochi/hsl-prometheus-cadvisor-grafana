@@ -1,0 +1,68 @@
+#!groovy
+
+pipeline {
+    agent {
+        label 'perf'
+    }
+    triggers {
+        // On any repo change.
+        pollSCM('H/3 * * * *')
+    }
+    options {
+        skipDefaultCheckout()
+    }
+    environment {
+        NOTIFY_SLACK_CHANNEL = '#team-infracloud'
+        REPO_NAME = 'github.com/ShiftLeftSecurity/infracloud-perf'
+        GITHUB_KEY = '4b3482c3-735f-4c31-8d1b-d8d3bd889348'
+    }
+    stages {
+        stage('Git Pull') {
+            steps {
+                script {
+                    sshagent (credentials: ["${env.GITHUB_KEY}"]) {
+                        checkout([$class: 'GitSCM', branches: [[name: "*/master"]], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: "${env.GITHUB_KEY}", url: "ssh://git@${env.REPO_NAME}"]]])
+                    }
+                }
+            }
+        }
+        // stage('Some other stage') {
+        //}
+    }
+
+    post {
+        failure {
+            script {
+                notifyFailed()
+            }
+        }
+        aborted {
+            script {
+                notifyAborted()
+            }
+        }
+        fixed {
+            script {
+                notifySuccess()
+            }
+        }
+    }
+}
+
+def notifyAborted() {
+    slackSend (channel: "${env.NOTIFY_SLACK_CHANNEL} ",
+            color: '#777777',
+            message: "ABORTED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
+}
+
+def notifyFailed() {
+    slackSend (channel: "${env.NOTIFY_SLACK_CHANNEL} ",
+            color: '#FF0000',
+            message: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
+}
+
+def notifySuccess() {
+    slackSend(channel: "${env.NOTIFY_SLACK_CHANNEL} ",
+            color: '#22FF00',
+            message: "FIXED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
+}
