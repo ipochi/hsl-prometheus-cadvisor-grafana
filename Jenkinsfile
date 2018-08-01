@@ -22,7 +22,8 @@ pipeline {
     stages {
       stage('Git Pull') {
         steps {
-          git branch: 'master', credentialsId: '89b56f52-38a5-40c7-93af-4c788b3ee76c', url: 'https://github.com:ipochi/hsl-prometheus-cadvisor-grafana.git'
+          checkout scm
+          //git branch: 'master', credentialsId: '89b56f52-38a5-40c7-93af-4c788b3ee76c', url: 'https://github.com:ipochi/hsl-prometheus-cadvisor-grafana.git'
           // script {
           //   sshagent (credentials: ["${env.GITHUB_KEY}"]) {
           //     checkout([$class: 'GitSCM', branches: [[name: "*/jenkinsfile-changes"]], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: "${env.GITHUB_KEY}", url: "ssh://git@${env.REPO_NAME}"]]])
@@ -40,22 +41,23 @@ pipeline {
   
       stage("Start docker compose for monitoring ...") {
         steps {
-          sh 'docker-compose -f docker-compose/docker-compose-monitor.yaml up'
+          sh 'echo ${WORKSPACE}'
+          sh 'docker-compose -f ${WORKSPACE}/docker-compose/docker-compose-monitor.yaml up -d'
             // Sleeping for 1 min to start prometheus , grafana and cadvisor
             sh 'sleep 60'
-            sh './script/init.sh admin:admin'
+            sh 'bash ./script/init.sh admin:admin'
         }
       }
       
       stage("Start docker containers for test") {
         steps  {
-          sh 'FREQUENCY=${env.FREQUENCY} DURATION=${env.DURATION} docker-compose -f docker-compose/docker-compose-hsl-withsl.yaml up --abort-on-container-exit'
+          sh 'FREQUENCY=${env.FREQUENCY} DURATION=${env.DURATION} docker-compose -f ${WORKSPACE}/docker-compose/docker-compose-hsl-withsl.yaml up -d --abort-on-container-exit'
         }
       }
 
       stage("Stop monitoring after test finishes") {
         steps {
-          sh 'docker-compose -f docker-compose/docker-compose-monitor.yaml down'
+          sh 'docker-compose -f ${WORKSPACE}/docker-compose/docker-compose-monitor.yaml down'
         }
       }
     }
